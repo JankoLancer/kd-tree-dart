@@ -168,6 +168,10 @@ class KDTree {
     var i, result;
     BinaryHeap bestNodes;
 
+    if (metric == null) {
+      throw Exception('Metric function undefined. Please notice that, after deserialization, you must redefine the metric function.');
+    }
+
     bestNodes = BinaryHeap((e) {
       return -e[1];
     });
