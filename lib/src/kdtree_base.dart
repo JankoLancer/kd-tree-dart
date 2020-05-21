@@ -4,21 +4,21 @@ import 'binary_heap.dart';
 import 'node.dart';
 
 class KDTree {
-  List<dynamic> points;
   Function metric;
   List<String> dimensions;
   Node root;
 
-  KDTree(this.points, this.metric, this.dimensions) {
-    root = buildTree(points, 0, null);
+  KDTree(this.metric, this.dimensions, {List<Map> points}) {
+    root = buildTree(points ?? [], 0, null);
   }
 
-  Node buildTree(List<dynamic> points, depth, parent) {
-    var dim = depth % dimensions.length, median, node;
-
+  Node buildTree(List<Map> points, depth, parent) {
     if (points.isEmpty) {
       return null;
     }
+
+    var dim = depth % dimensions.length, median, node;
+
     if (points.length == 1) {
       return Node(points[0], dim, parent);
     }
@@ -168,6 +168,10 @@ class KDTree {
     var i, result;
     BinaryHeap bestNodes;
 
+    if (metric == null) {
+      throw Exception('Metric function undefined. Please notice that, after deserialization, you must redefine the metric function.');
+    }
+
     bestNodes = BinaryHeap((e) {
       return -e[1];
     });
@@ -257,21 +261,27 @@ class KDTree {
     return result;
   }
 
-  double balanceFactor() {
-    int height(node) {
-      if (node == null) {
-        return 0;
-      }
-      return max(height(node.left), height(node.right)) + 1;
-    }
+  double balanceFactor() => height / (log(length) / log(2));
 
-    int count(node) {
-      if (node == null) {
-        return 0;
-      }
-      return count(node.left) + count(node.right) + 1;
+  KDTree.fromJson(Map<String, dynamic> json) {
+    dimensions = List.from(json['dim']);
+    if (json['root'] != null) {
+      root = Node.fromJson(json['root']);
+    } else {
+      root = null;
     }
+  }
 
-    return height(root) / (log(count(root)) / log(2));
+  Map<String, dynamic> toJson() => {
+        'dim': dimensions,
+        'root': root?.toJson(),
+      };
+
+  int get length {
+    return root?.length ?? 0;
+  }
+
+  int get height {
+    return root?.height ?? 0;
   }
 }
