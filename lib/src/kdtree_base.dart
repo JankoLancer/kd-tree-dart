@@ -8,7 +8,7 @@ class KDTree {
   List<String> dimensions;
   Node root;
 
-  KDTree(this.metric, this.dimensions, {List<Map> points}) {
+  KDTree(List<Map> points, this.metric, this.dimensions) {
     root = buildTree(points ?? [], 0, null);
   }
 
@@ -56,8 +56,7 @@ class KDTree {
       return;
     }
 
-    newNode = Node(point, (insertPosition.dimension + 1) % dimensions.length,
-        insertPosition);
+    newNode = Node(point, (insertPosition.dimension + 1) % dimensions.length, insertPosition);
     dimension = dimensions[insertPosition.dimension];
 
     if (point[dimension] < insertPosition.obj[dimension]) {
@@ -169,7 +168,8 @@ class KDTree {
     BinaryHeap bestNodes;
 
     if (metric == null) {
-      throw Exception('Metric function undefined. Please notice that, after deserialization, you must redefine the metric function.');
+      throw Exception(
+          'Metric function undefined. Please notice that, after deserialization, you must redefine the metric function.');
     }
 
     bestNodes = BinaryHeap((e) {
@@ -227,8 +227,7 @@ class KDTree {
         saveNode(node, ownDistance);
       }
 
-      if (bestNodes.size() < maxNodes ||
-          linearDistance.abs() < bestNodes.peek()[1]) {
+      if (bestNodes.size() < maxNodes || linearDistance.abs() < bestNodes.peek()[1]) {
         if (bestChild == node.left) {
           otherChild = node.right;
         } else {
