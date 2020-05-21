@@ -1,5 +1,5 @@
 name: kdtree
-version: 0.0.2
+version: 0.1.0
 description: A basic super fast Dart implementation of the k-dimensional (k-d) tree data structure.
 homepage: https://github.com/JankoLancer/kd-tree-dart
 
