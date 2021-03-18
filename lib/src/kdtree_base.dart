@@ -4,44 +4,45 @@ import 'binary_heap.dart';
 import 'node.dart';
 
 class KDTree {
-  Function metric;
-  List<String> dimensions;
-  Node root;
+  final List<String> _dimensions;
+  late Node? _root;
+  Function? _metric;
 
-  KDTree(List<Map> points, this.metric, this.dimensions) {
-    root = buildTree(points ?? [], 0, null);
+  KDTree(List<Map> points, this._metric, this._dimensions) {
+    _root = _buildTree(points, 0, null);
   }
 
-  Node buildTree(List<Map> points, depth, parent) {
+  Node? _buildTree(List<Map> points, depth, parent) {
     if (points.isEmpty) {
       return null;
     }
 
-    var dim = depth % dimensions.length, median, node;
+    var dim = depth % _dimensions.length, median, node;
 
     if (points.length == 1) {
       return Node(points[0], dim, parent);
     }
 
     points.sort((a, b) {
-      return a[dimensions[dim]].compareTo(b[dimensions[dim]]);
+      return a[_dimensions[dim]].compareTo(b[_dimensions[dim]]);
     });
 
     median = (points.length / 2).floor();
     node = Node(points[median], dim, parent);
-    node.left = buildTree(points.sublist(0, median), depth + 1, node);
-    node.right = buildTree(points.sublist(median + 1), depth + 1, node);
+    node.left = _buildTree(points.sublist(0, median), depth + 1, node);
+    node.right = _buildTree(points.sublist(median + 1), depth + 1, node);
 
     return node;
   }
 
+  // Insert the Node in the K-d Tree
   void insert(point) {
-    Node innerSearch(node, parent) {
+    Node? innerSearch(Node? node, Node? parent) {
       if (node == null) {
         return parent;
       }
 
-      var dimension = dimensions[node.dimension];
+      var dimension = _dimensions[node.dimension];
       if (point[dimension] < node.obj[dimension]) {
         return innerSearch(node.left, node);
       } else {
@@ -49,15 +50,16 @@ class KDTree {
       }
     }
 
-    var insertPosition = innerSearch(root, null), newNode, dimension;
+    var insertPosition = innerSearch(_root, null), newNode, dimension;
 
     if (insertPosition == null) {
-      root = Node(point, 0, null);
+      _root = Node(point, 0, null);
       return;
     }
 
-    newNode = Node(point, (insertPosition.dimension + 1) % dimensions.length, insertPosition);
-    dimension = dimensions[insertPosition.dimension];
+    newNode = Node(point, (insertPosition.dimension + 1) % _dimensions.length,
+        insertPosition);
+    dimension = _dimensions[insertPosition.dimension];
 
     if (point[dimension] < insertPosition.obj[dimension]) {
       insertPosition.left = newNode;
@@ -66,10 +68,11 @@ class KDTree {
     }
   }
 
+  /// Remove the Node from the K-d Tree
   void remove(point) {
     var node;
 
-    Node nodeSearch(node) {
+    Node? nodeSearch(Node? node) {
       if (node == null) {
         return null;
       }
@@ -78,7 +81,7 @@ class KDTree {
         return node;
       }
 
-      var dimension = dimensions[node.dimension];
+      var dimension = _dimensions[node.dimension];
 
       if (point[dimension] < node.obj[dimension]) {
         return nodeSearch(node.left);
@@ -87,17 +90,17 @@ class KDTree {
       }
     }
 
-    void removeNode(node) {
+    void removeNode(Node node) {
       var nextNode, nextObj, pDimension;
 
-      Node findMin(node, dim) {
+      Node? findMin(Node? node, dim) {
         var dimension, own, left, right, min;
 
         if (node == null) {
           return null;
         }
 
-        dimension = dimensions[dim];
+        dimension = _dimensions[dim];
 
         if (node.dimension == dim) {
           if (node.left != null) {
@@ -122,16 +125,16 @@ class KDTree {
 
       if (node.left == null && node.right == null) {
         if (node.parent == null) {
-          root = null;
+          _root = null;
           return;
         }
 
-        pDimension = dimensions[node.parent.dimension];
+        pDimension = _dimensions[node.parent!.dimension];
 
-        if (node.obj[pDimension] < node.parent.obj[pDimension]) {
-          node.parent.left = null;
+        if (node.obj[pDimension] < node.parent?.obj[pDimension]) {
+          node.parent?.left = null;
         } else {
-          node.parent.right = null;
+          node.parent?.right = null;
         }
         return;
       }
@@ -154,7 +157,7 @@ class KDTree {
       }
     }
 
-    node = nodeSearch(root);
+    node = nodeSearch(_root);
 
     if (node == null) {
       return;
@@ -163,11 +166,14 @@ class KDTree {
     removeNode(node);
   }
 
-  List<dynamic> nearest(point, int maxNodes, [int maxDistance]) {
+  /// Find the [maxNodes] of nearest Nodes.
+  /// Distance is calculated via Metric function.
+  /// Max distance can be set with [maxDistance] param
+  List<dynamic> nearest(point, int maxNodes, [int? maxDistance]) {
     var i, result;
     BinaryHeap bestNodes;
 
-    if (metric == null) {
+    if (_metric == null) {
       throw Exception(
           'Metric function undefined. Please notice that, after deserialization, you must redefine the metric function.');
     }
@@ -178,8 +184,8 @@ class KDTree {
 
     void nearestSearch(node) {
       var bestChild,
-          dimension = dimensions[node.dimension],
-          ownDistance = metric(point, node.obj),
+          dimension = _dimensions[node.dimension],
+          ownDistance = _metric!(point, node.obj),
           linearPoint = {},
           linearDistance,
           otherChild,
@@ -192,15 +198,15 @@ class KDTree {
         }
       }
 
-      for (i = 0; i < dimensions.length; i += 1) {
+      for (i = 0; i < _dimensions.length; i += 1) {
         if (i == node.dimension) {
-          linearPoint[dimensions[i]] = point[dimensions[i]];
+          linearPoint[_dimensions[i]] = point[_dimensions[i]];
         } else {
-          linearPoint[dimensions[i]] = node.obj[dimensions[i]];
+          linearPoint[_dimensions[i]] = node.obj[_dimensions[i]];
         }
       }
 
-      linearDistance = metric(linearPoint, node.obj);
+      linearDistance = _metric!(linearPoint, node.obj);
 
       if (node.right == null && node.left == null) {
         if (bestNodes.size() < maxNodes || ownDistance < bestNodes.peek()[1]) {
@@ -227,7 +233,8 @@ class KDTree {
         saveNode(node, ownDistance);
       }
 
-      if (bestNodes.size() < maxNodes || linearDistance.abs() < bestNodes.peek()[1]) {
+      if (bestNodes.size() < maxNodes ||
+          linearDistance.abs() < bestNodes.peek()[1]) {
         if (bestChild == node.left) {
           otherChild = node.right;
         } else {
@@ -245,8 +252,8 @@ class KDTree {
       }
     }
 
-    if (root != null) {
-      nearestSearch(root);
+    if (_root != null) {
+      nearestSearch(_root);
     }
 
     result = [];
@@ -260,27 +267,38 @@ class KDTree {
     return result;
   }
 
+  /// Calculate balance factor of K-d Tree
   double balanceFactor() => height / (log(length) / log(2));
 
-  KDTree.fromJson(Map<String, dynamic> json) {
-    dimensions = List.from(json['dim']);
+  KDTree.fromJson(Map<String, dynamic> json)
+      : _dimensions = List.from(json['dim']) {
     if (json['root'] != null) {
-      root = Node.fromJson(json['root']);
-    } else {
-      root = null;
+      _root = Node.fromJson(json['root']);
     }
   }
 
   Map<String, dynamic> toJson() => {
-        'dim': dimensions,
-        'root': root?.toJson(),
+        'dim': _dimensions,
+        'root': _root?.toJson(),
       };
 
+  /// Calculate lenght of K-d Tree
   int get length {
-    return root?.length ?? 0;
+    return _root?.length ?? 0;
   }
 
+  /// Calculate height of K-d Tree
   int get height {
-    return root?.height ?? 0;
+    return _root?.height ?? 0;
+  }
+
+  /// Return dimensions that was setted on Tree creation
+  List<String> get dimensions {
+    return _dimensions;
+  }
+
+  /// Set the new metric function. This must be done after JSON deserialization since JSON can't serialize Function.
+  set metric(Function? newMetric) {
+    _metric = newMetric;
   }
 }

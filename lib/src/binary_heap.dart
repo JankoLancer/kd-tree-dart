@@ -2,9 +2,7 @@ class BinaryHeap {
   Function scoreFunction;
   List content;
 
-  BinaryHeap(this.scoreFunction) {
-    content = [];
-  }
+  BinaryHeap(this.scoreFunction) : content = [];
 
   void push(element) {
     content.add(element);
