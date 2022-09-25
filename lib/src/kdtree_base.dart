@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'binary_heap.dart';
 import 'node.dart';
+import 'quickselect.dart';
 
 class KDTree {
   final List<String> _dimensions;
@@ -23,11 +24,14 @@ class KDTree {
       return Node(points[0], dim, parent);
     }
 
-    points.sort((a, b) {
-      return a[_dimensions[dim]].compareTo(b[_dimensions[dim]]);
-    });
-
     median = (points.length / 2).floor();
+    quickSelect(
+      points,
+      median,
+      compare: (Map a, Map b) =>
+          a[_dimensions[dim]].compareTo(b[_dimensions[dim]]),
+    );
+
     node = Node(points[median], dim, parent);
     node.left = _buildTree(points.sublist(0, median), depth + 1, node);
     node.right = _buildTree(points.sublist(median + 1), depth + 1, node);
